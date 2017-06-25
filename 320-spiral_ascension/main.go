@@ -2,7 +2,6 @@
 // Written by Michael Mattioli
 //
 
-
 package main
 
 import (
@@ -120,7 +119,6 @@ func SpiralPrinter (g [][]int) {
 }
 
 func main() {
-
 
     specimen, err := strconv.Atoi(os.Args[1])
     if err != nil {
