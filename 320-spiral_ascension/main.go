@@ -10,46 +10,47 @@ import (
     "os"
 )
 
-// Position is a simple X,Y coordinate pair corresponding to a location on a 2D grid
+// Position is a simple X,Y coordinate pair corresponding to a location on a 2D grid.
 type Position struct {
     x, y int
 }
 
-// NewGrid returns a square 2D slice with each element initialized to 0
-func NewGrid (specimen int) [][]int {
-    grid := make([][]int, specimen)
+// NewGrid returns a square, 2D slice; the size is determined by the span and each value is
+// initialized to 0.
+func NewGrid (span int) [][]int {
+    grid := make([][]int, span)
     for i := range grid {
-        grid[i] = make([]int, specimen)
+        grid[i] = make([]int, span)
     }
     return grid
 }
 
-// SpiralMaker returns a square grid containing the numbers within the range of a particular number
-// squared organized in a spiral fashion
-func SpiralMaker(s int) [][]int {
+// SpiralMaker returns a square, 2D slice containing the numbers within the range of a particular
+// number, n, squared organized in a spiral fashion.
+func SpiralMaker(n int) [][]int {
 
-    // Make a new grid
-    grid := NewGrid(s)
+    // Make a new grid.
+    grid := NewGrid(n)
 
-    // Define the initial amount of steps to take when walking the grid in a spiral fashion
-    rightSteps := s - 1
-    downSteps := s - 2
-    leftSteps := s - 2
-    upSteps := s - 3
+    // Define the initial amount of steps to take when walking the grid in a spiral fashion.
+    rightSteps := n - 1
+    downSteps := n - 2
+    leftSteps := n - 2
+    upSteps := n - 3
 
-    // Starting point will be the top-left corner (0,0)
+    // Starting point will be the top-left corner (0,0).
     currentPosition := &Position{0, 0}
 
-    // Always start to fill the grid with 1
+    // Always start to fill the grid with 1.
     currentNumber := 1
 
     // Start by moving toward the right then down, then left, then up, etc.
     nextStep := "Right"
 
-    // Keep track o the number of steps we've taken in each direction
+    // Keep track o the number of steps we've taken in each direction.
     stepsTaken := 0
 
-    for currentNumber <= (s * s) { // While we haven't reached the final number...
+    for currentNumber <= (n * n) { // While we haven't reached the final number...
         grid[currentPosition.x][currentPosition.y] = currentNumber
         switch nextStep {
         case "Right":
@@ -100,16 +101,17 @@ func SpiralMaker(s int) [][]int {
 
 }
 
-// SpiralPrinter prints a spiral grid on the screen in which each element is equally spaced
-func SpiralPrinter (g [][]int) {
+// SpiralPrinter prints the elements of a square, 2D slice on the screen in which each element is
+// equally spaced; it is assumed the specified slice's elements are arranged in a spiral fashion.
+func SpiralPrinter (spiral [][]int) {
 
-    elementWidth := len(strconv.Itoa(len(g) * len(g)))
+    elementWidth := len(strconv.Itoa(len(spiral) * len(spiral)))
 
-    for i := range g {
+    for i := range spiral {
         line := ""
-        for j := range g[i] {
-            element := strconv.Itoa(g[j][i])
-            for p := len(element); p <= elementWidth; p++ {
+        for j := range spiral[i] {
+            element := strconv.Itoa(spiral[j][i])
+            for padding := len(element); padding <= elementWidth; padding++ {
                 element += " "
             }
             line += element
