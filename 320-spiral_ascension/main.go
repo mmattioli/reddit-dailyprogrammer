@@ -17,7 +17,7 @@ type Position struct {
 
 // NewGrid returns a square, 2D slice; the size is determined by the span and each value is
 // initialized to 0.
-func NewGrid (span int) [][]int {
+func NewGrid(span int) [][]int {
     grid := make([][]int, span)
     for i := range grid {
         grid[i] = make([]int, span)
@@ -25,9 +25,9 @@ func NewGrid (span int) [][]int {
     return grid
 }
 
-// SpiralMaker returns a square, 2D slice containing the numbers within the range of a particular
+// NewSpiral returns a square, 2D slice containing the numbers within the range of a particular
 // number, n, squared organized in a spiral fashion.
-func SpiralMaker(n int) [][]int {
+func NewSpiral(n int) [][]int {
 
     // Make a new grid.
     grid := NewGrid(n)
@@ -103,7 +103,7 @@ func SpiralMaker(n int) [][]int {
 
 // SpiralPrinter prints the elements of a square, 2D slice on the screen in which each element is
 // equally spaced; it is assumed the specified slice's elements are arranged in a spiral fashion.
-func SpiralPrinter (spiral [][]int) {
+func SpiralPrinter(spiral [][]int) {
 
     elementWidth := len(strconv.Itoa(len(spiral) * len(spiral)))
 
@@ -128,7 +128,7 @@ func main() {
         os.Exit(1)
     }
 
-    spiral := SpiralMaker(specimen)
+    spiral := NewSpiral(specimen)
     SpiralPrinter(spiral)
 
 }
