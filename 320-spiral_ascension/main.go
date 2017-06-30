@@ -10,36 +10,31 @@ import (
     "os"
 )
 
-// Position is a simple X,Y coordinate pair corresponding to a location on a 2D grid.
-type Position struct {
-    x, y int
-}
-
-// NewGrid returns a square, 2D slice; the size is determined by the span and each value is
-// initialized to 0.
-func NewGrid(span int) [][]int {
-    grid := make([][]int, span)
-    for i := range grid {
-        grid[i] = make([]int, span)
-    }
-    return grid
-}
-
 // NewSpiral returns a square, 2D slice containing the numbers within the range of a particular
 // number, n, squared organized in a spiral fashion.
 func NewSpiral(n int) [][]int {
 
-    // Make a new grid.
-    grid := NewGrid(n)
+    // Make a new square, 2D grid.
+    grid := make([][]int, n)
+    for i := range grid {
+        grid[i] = make([]int, n)
+    }
 
     // Define the initial amount of steps to take when walking the grid in a spiral fashion.
-    rightSteps := n - 1
-    downSteps := n - 2
-    leftSteps := n - 2
-    upSteps := n - 3
+    steps := map[string]int {
+        "Right" : n - 1,
+        "Down" : n - 2,
+        "Left": n - 2,
+        "Up" : n - 3,
+    }
 
     // Starting point will be the top-left corner (0,0).
-    currentPosition := &Position{0, 0}
+    currentPosition := struct {
+        x, y int
+    }{
+        0,
+        0,
+    }
 
     // Always start to fill the grid with 1.
     currentNumber := 1
@@ -47,54 +42,56 @@ func NewSpiral(n int) [][]int {
     // Start by moving toward the right then down, then left, then up, etc.
     nextStep := "Right"
 
-    // Keep track o the number of steps we've taken in each direction.
+    // Keep track of the number of steps we've taken in each direction.
     stepsTaken := 0
 
     for currentNumber <= (n * n) { // While we haven't reached the final number...
+
         grid[currentPosition.x][currentPosition.y] = currentNumber
+
+        turn := func(d string) {
+            steps[nextStep] -= 2
+            stepsTaken = 0
+            nextStep = d
+        }
+
         switch nextStep {
         case "Right":
-            if stepsTaken < rightSteps {
+            if stepsTaken < steps[nextStep] {
                 currentPosition.x++
                 stepsTaken++
-            } else {
-                currentPosition.y++
-                rightSteps -= 2
-                stepsTaken = 0
-                nextStep = "Down"
+                break
             }
+            currentPosition.y++
+            turn("Down")
         case "Down":
-            if stepsTaken < downSteps {
+            if stepsTaken < steps[nextStep] {
                 currentPosition.y++
                 stepsTaken++
-            } else {
-                currentPosition.x--
-                downSteps -= 2
-                stepsTaken = 0
-                nextStep = "Left"
+                break
             }
+            currentPosition.x--
+            turn("Left")
         case "Left":
-            if stepsTaken < leftSteps {
+            if stepsTaken < steps[nextStep] {
                 currentPosition.x--
                 stepsTaken++
-            } else {
-                currentPosition.y--
-                leftSteps -= 2
-                stepsTaken = 0
-                nextStep = "Up"
+                break
             }
+            currentPosition.y--
+            turn("Up")
         case "Up":
-            if stepsTaken < upSteps {
+            if stepsTaken < steps[nextStep] {
                 currentPosition.y--
                 stepsTaken++
-            } else {
-                currentPosition.x++
-                upSteps -= 2
-                stepsTaken = 0
-                nextStep = "Right"
+                break
             }
+            currentPosition.x++
+            turn("Right")
         }
+
         currentNumber++
+
     }
 
     return grid
@@ -108,15 +105,14 @@ func SpiralPrinter(spiral [][]int) {
     elementWidth := len(strconv.Itoa(len(spiral) * len(spiral)))
 
     for i := range spiral {
-        line := ""
         for j := range spiral[i] {
             element := strconv.Itoa(spiral[j][i])
             for padding := len(element); padding <= elementWidth; padding++ {
                 element += " "
             }
-            line += element
+            fmt.Printf("%s", element)
         }
-        fmt.Println(line)
+        fmt.Printf("\n")
     }
 }
 
