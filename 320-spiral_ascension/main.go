@@ -10,9 +10,14 @@ import (
     "os"
 )
 
-// NewSpiral returns a square, 2D slice containing the numbers within the range of a particular
-// number, n, squared organized in a spiral fashion.
-func NewSpiral(n int) [][]int {
+// Spiral is a square, 2D slice containing the numbers within the range of a particular number
+// squared organized in a spiral fashion.
+type Spiral struct {
+    grid [][]int
+}
+
+// NewSpiral returns a pointer to a Spiral made with the specified number.
+func NewSpiral(n int) *Spiral {
 
     // Make a new square, 2D grid.
     grid := make([][]int, n)
@@ -29,7 +34,7 @@ func NewSpiral(n int) [][]int {
     }
 
     // Starting point will be the top-left corner (0,0).
-    currentPosition := struct {
+    position := struct {
         x, y int
     }{
         0,
@@ -37,83 +42,94 @@ func NewSpiral(n int) [][]int {
     }
 
     // Always start to fill the grid with 1.
-    currentNumber := 1
+    fill := 1
 
     // Start by moving toward the right then down, then left, then up, etc.
-    nextStep := "Right"
+    direction := "Right"
 
     // Keep track of the number of steps we've taken in each direction.
-    stepsTaken := 0
+    distance := 0
 
-    for currentNumber <= (n * n) { // While we haven't reached the final number...
+    // We've reached the end of the line, turn.
+    turn := func(d string) {
+        steps[direction] -= 2
+        distance = 0
+        direction = d
+    }
 
-        grid[currentPosition.x][currentPosition.y] = currentNumber
-
-        turn := func(d string) {
-            steps[nextStep] -= 2
-            stepsTaken = 0
-            nextStep = d
+    // Keep walking down the line.
+    walk := func() bool {
+        if distance == steps[direction] {
+            return false
         }
+        distance++
+        return true
+    }
 
-        switch nextStep {
+    for fill <= (n * n) { // While we haven't reached the final number...
+
+        grid[position.x][position.y] = fill
+
+        switch direction {
         case "Right":
-            if stepsTaken < steps[nextStep] {
-                currentPosition.x++
-                stepsTaken++
+            if walk() {
+                position.x++
                 break
             }
-            currentPosition.y++
+            position.y++
             turn("Down")
         case "Down":
-            if stepsTaken < steps[nextStep] {
-                currentPosition.y++
-                stepsTaken++
+            if walk() {
+                position.y++
                 break
             }
-            currentPosition.x--
+            position.x--
             turn("Left")
         case "Left":
-            if stepsTaken < steps[nextStep] {
-                currentPosition.x--
-                stepsTaken++
+            if walk() {
+                position.x--
                 break
             }
-            currentPosition.y--
+            position.y--
             turn("Up")
         case "Up":
-            if stepsTaken < steps[nextStep] {
-                currentPosition.y--
-                stepsTaken++
+            if walk() {
+                position.y--
                 break
             }
-            currentPosition.x++
+            position.x++
             turn("Right")
         }
 
-        currentNumber++
+        fill++
 
     }
 
-    return grid
+    return &Spiral{grid}
 
 }
 
-// SpiralPrinter prints the elements of a square, 2D slice on the screen in which each element is
-// equally spaced; it is assumed the specified slice's elements are arranged in a spiral fashion.
-func SpiralPrinter(spiral [][]int) {
+func (s *Spiral) String() string {
 
-    elementWidth := len(strconv.Itoa(len(spiral) * len(spiral)))
+    temp := ""
 
-    for i := range spiral {
-        for j := range spiral[i] {
-            element := strconv.Itoa(spiral[j][i])
-            for padding := len(element); padding <= elementWidth; padding++ {
+    width := len(strconv.Itoa(len(s.grid) * len(s.grid)))
+
+    for i := range s.grid {
+        for j := range s.grid[i] {
+            element := strconv.Itoa(s.grid[j][i])
+            for padding := len(element); padding <= width; padding++ {
                 element += " "
             }
-            fmt.Printf("%s", element)
+            temp += element
         }
-        fmt.Printf("\n")
+        if i != len(s.grid) - 1 {
+            temp += "\n"
+        }
     }
+
+    return temp
+
 }
 
 func main() {
@@ -125,6 +141,6 @@ func main() {
     }
 
     spiral := NewSpiral(specimen)
-    SpiralPrinter(spiral)
+    fmt.Println(spiral)
 
 }
