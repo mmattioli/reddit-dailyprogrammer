@@ -7,6 +7,7 @@ package main
 import (
     "fmt"
     "strconv"
+    "bytes"
     "os"
 )
 
@@ -111,24 +112,24 @@ func NewSpiral(n int) *Spiral {
 
 func (s *Spiral) String() string {
 
-    temp := ""
+    var ns bytes.Buffer
 
-    width := len(strconv.Itoa(len(s.grid) * len(s.grid)))
+    w := len(strconv.Itoa(len(s.grid) * len(s.grid)))
 
     for i := range s.grid {
         for j := range s.grid[i] {
-            element := strconv.Itoa(s.grid[j][i])
-            for padding := len(element); padding <= width; padding++ {
-                element += " "
+            e := bytes.NewBufferString(strconv.Itoa(s.grid[j][i]))
+            for p := len(e.String()); p <= w; p++ {
+                e.WriteString(" ")
             }
-            temp += element
+            ns.WriteString(e.String())
         }
         if i != len(s.grid) - 1 {
-            temp += "\n"
+            ns.WriteString("\n")
         }
     }
 
-    return temp
+    return ns.String()
 
 }
 
