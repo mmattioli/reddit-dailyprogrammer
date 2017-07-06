@@ -14,6 +14,7 @@ import (
 // string length n.
 func LargestPalindrome(n int) int {
 
+    // Determine if an integer is a palindrome.
     isPalindrome := func(n int) bool {
         ten := 1
         for t := n; t != 0; t /= 10 {
@@ -31,6 +32,7 @@ func LargestPalindrome(n int) int {
         return true
     }
 
+    // Since we're looking for the largest number, we'll start with the largest possible factor(s).
     startingFactor := func(n int) int {
         var b bytes.Buffer
         for i := 0; i < n; i++ {
@@ -40,11 +42,20 @@ func LargestPalindrome(n int) int {
         return f
     }
 
-    sf := startingFactor(n)
+    // Count the number of digits in an integer.
+    digits := func(n int) int {
+        var d int
+        for n != 0 {
+            n /= 10
+            d++
+        }
+        return d
+    }
 
+    sf := startingFactor(n)
     var f1, f2 int
-    for i := sf; len(strconv.Itoa(i)) == n; i-- {
-        for j := sf; len(strconv.Itoa(j)) == n; j-- {
+    for i := sf; digits(i) == n; i-- {
+        for j := sf; digits(j) == n; j-- {
             if isPalindrome(i * j) && (i * j) > (f1 * f2) {
                 f1, f2 = i, j
             }
@@ -56,7 +67,6 @@ func LargestPalindrome(n int) int {
 }
 
 func main() {
-    fmt.Println(LargestPalindrome(1))
     fmt.Println(LargestPalindrome(2))
     fmt.Println(LargestPalindrome(3))
     fmt.Println(LargestPalindrome(4))
