@@ -8,28 +8,29 @@ import (
     "fmt"
     "strconv"
     "bytes"
+    "time"
+    "log"
 )
 
 // LargestPalindrome returns the largest integer that is a palindrome and has two factors both of
 // string length n.
 func LargestPalindrome(n int) int {
 
+    // Calculate and log the total execution time.
+    executionTime := func(s time.Time) {
+        log.Printf("Execution time: %s", time.Since(s))
+    }
+
+    defer executionTime(time.Now())
+
     // Determine if an integer is a palindrome.
     isPalindrome := func(n int) bool {
-        ten := 1
-        for t := n; t != 0; t /= 10 {
-            ten *= 10
-        }
-        ten /= 10
-        for n != 0 {
-            if (n / ten) != (n % 10) {
-                return false
-            }
-            n %= ten
+        num, rev := n, 0
+        for n > 0 {
+            rev = (rev * 10) + (n % 10)
             n /= 10
-            ten /= 100
         }
-        return true
+        return num == rev
     }
 
     // Since we're looking for the largest number, we'll start with the largest possible factor(s).
@@ -52,10 +53,9 @@ func LargestPalindrome(n int) int {
         return d
     }
 
-    sf := startingFactor(n)
     var f1, f2 int
-    for i := sf; digits(i) == n; i-- {
-        for j := sf; digits(j) == n; j-- {
+    for i := startingFactor(n); digits(i) == n; i-- {
+        for j := startingFactor(n); digits(j) == n; j-- {
             if isPalindrome(i * j) && (i * j) > (f1 * f2) {
                 f1, f2 = i, j
             }
@@ -67,6 +67,7 @@ func LargestPalindrome(n int) int {
 }
 
 func main() {
+    fmt.Println(LargestPalindrome(1))
     fmt.Println(LargestPalindrome(2))
     fmt.Println(LargestPalindrome(3))
     fmt.Println(LargestPalindrome(4))
