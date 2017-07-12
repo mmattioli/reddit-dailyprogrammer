@@ -17,11 +17,11 @@ import (
 func LargestPalindrome(n int) int {
 
     // Calculate and log the total execution time.
-    executionTime := func(s time.Time) {
+    execTime := func(s time.Time) {
         log.Printf("Execution time: %s", time.Since(s))
     }
 
-    defer executionTime(time.Now())
+    defer execTime(time.Now())
 
     // Determine if an integer is a palindrome.
     isPalindrome := func(n int) bool {
