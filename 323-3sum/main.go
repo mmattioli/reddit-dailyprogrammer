@@ -15,11 +15,9 @@ import (
 func ThreeSum(nums ...int) {
 
     // Calculate and log the total execution time.
-    execTime := func(s time.Time) {
-        log.Printf("Execution time: %s", time.Since(s))
-    }
-
-    defer execTime(time.Now())
+    defer func(t time.Time) {
+        log.Printf("Execution time: %s", time.Since(t))
+    }(time.Now())
 
     // Use a slice to store the triplets.
     var trpl [][3]int
@@ -31,50 +29,43 @@ func ThreeSum(nums ...int) {
     wg.Add(len(nums))
 
     // Keep track of all triplets found and ensure no duplicates.
-    track := func(it <-chan [3]int) {
-        go func() {
-            for i := range it {
-                var found bool
-                for t := range trpl {
-                    if trpl[t][0] == i[0] && trpl[t][1] == i[1] && trpl[t][2] == i[2] {
-                        found = true
-                    }
-                }
-                if !found {
-                    trpl = append(trpl, i)
+    go func(it <-chan [3]int) {
+        for i := range it {
+            var found bool
+            for t := range trpl {
+                if trpl[t][0] == i[0] && trpl[t][1] == i[1] && trpl[t][2] == i[2] {
+                    found = true
                 }
             }
-        }()
-    }
+            if !found {
+                trpl = append(trpl, i)
+            }
+        }
+    }(c)
 
     // Find all triplets whose sum equals zero (0).
-    find := func(ot chan<- [3]int) {
-        sort.Ints(nums)
-        for i := range nums {
-            go func(i int) {
-                defer wg.Done()
-                start, end := i + 1, len(nums) - 1
-                for start < end {
-                    val := nums[i] + nums[start] + nums[end]
-                    switch {
-                    case val == 0:
-                        ot <- [3]int{nums[i], nums[start], nums[end]}
-                        end--
-                    case val > 0:
-                        end--
-                    default:
-                        start++
-                    }
+    sort.Ints(nums)
+    for i := range nums {
+        go func(i int, ot chan<- [3]int) {
+            defer wg.Done()
+            start, end := i + 1, len(nums) - 1
+            for start < end {
+                val := nums[i] + nums[start] + nums[end]
+                switch {
+                case val == 0:
+                    ot <- [3]int{nums[i], nums[start], nums[end]}
+                    end--
+                case val > 0:
+                    end--
+                default:
+                    start++
                 }
-            }(i)
-        }
-        wg.Wait()
-        close(c)
+            }
+        }(i, c)
     }
 
-    // Start the goroutines.
-    track(c)
-    find(c)
+    wg.Wait()
+    close(c)
 
     // Display the triplets.
     for t := range trpl {
