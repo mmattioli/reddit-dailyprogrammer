@@ -12,7 +12,9 @@ import (
     "log"
 )
 
-func ThreeSum(nums ...int) {
+// ThreeSum returns a slice containing slices composed of three (3) integers whose sum equals 
+// zero (0) given a set of real numbers.
+func ThreeSum(nums ...int) [][3]int {
 
     // Calculate and log the total execution time.
     defer func(t time.Time) {
@@ -66,16 +68,12 @@ func ThreeSum(nums ...int) {
 
     wg.Wait()
     close(c)
-
-    // Display the triplets.
-    for t := range trpl {
-        fmt.Println(trpl[t])
-    }
+    return trpl
 
 }
 
 func main() {
-    ThreeSum(4, 5, -1, -2, -7, 2, -5, -3, -7, -3, 1)
-    ThreeSum(-1, -6, -3, -7, 5, -8, 2, -8, 1)
-    ThreeSum(-5, -1, -4, 2, 9, -9, -6, -1, -7)
+    fmt.Println(ThreeSum(4, 5, -1, -2, -7, 2, -5, -3, -7, -3, 1))
+    fmt.Println(ThreeSum(-1, -6, -3, -7, 5, -8, 2, -8, 1))
+    fmt.Println(ThreeSum(-5, -1, -4, 2, 9, -9, -6, -1, -7))
 }
