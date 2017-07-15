@@ -12,9 +12,11 @@ import (
     "log"
 )
 
-// ThreeSum returns a slice containing slices composed of three (3) integers whose sum equals 
-// zero (0) given a set of real numbers.
-func ThreeSum(nums ...int) [][3]int {
+// Triplet is a slice containing three (3) integers whose sum equals zero (0).
+type Triplet [3]int
+
+// ThreeSum returns a slice of Triplets given a set of real numbers.
+func ThreeSum(nums ...int) []Triplet {
 
     // Calculate and log the total execution time.
     defer func(t time.Time) {
@@ -22,16 +24,16 @@ func ThreeSum(nums ...int) [][3]int {
     }(time.Now())
 
     // Use a slice to store the triplets.
-    var trpl [][3]int
+    var trpl []Triplet
 
     // Use a channel to send data across goroutines and a WaitGroup to ensure all goroutines finish
     // before closing the channel.
-    c := make(chan [3]int)
+    c := make(chan Triplet)
     var wg sync.WaitGroup
     wg.Add(len(nums))
 
     // Keep track of all triplets found and ensure no duplicates.
-    go func(it <-chan [3]int) {
+    go func(it <-chan Triplet) {
         for i := range it {
             var found bool
             for t := range trpl {
@@ -48,14 +50,14 @@ func ThreeSum(nums ...int) [][3]int {
     // Find all triplets whose sum equals zero (0).
     sort.Ints(nums)
     for i := range nums {
-        go func(i int, ot chan<- [3]int) {
+        go func(i int, ot chan<- Triplet) {
             defer wg.Done()
             start, end := i + 1, len(nums) - 1
             for start < end {
                 val := nums[i] + nums[start] + nums[end]
                 switch {
                 case val == 0:
-                    ot <- [3]int{nums[i], nums[start], nums[end]}
+                    ot <- Triplet{nums[i], nums[start], nums[end]}
                     end--
                 case val > 0:
                     end--

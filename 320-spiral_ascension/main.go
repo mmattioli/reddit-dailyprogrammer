@@ -13,17 +13,15 @@ import (
 
 // Spiral is a square, 2D slice containing the numbers within the range of a particular number
 // squared organized in a spiral fashion.
-type Spiral struct {
-    grid [][]int
-}
+type Spiral [][]int
 
 // NewSpiral returns a pointer to a Spiral made with the specified number.
-func NewSpiral(n int) *Spiral {
+func NewSpiral(n int) Spiral {
 
     // Make a new square, 2D grid.
-    grid := make([][]int, n)
-    for i := range grid {
-        grid[i] = make([]int, n)
+    s := make(Spiral, n)
+    for i := range s {
+        s[i] = make([]int, n)
     }
 
     // Define the initial amount of steps to take when walking the grid in a spiral fashion.
@@ -35,7 +33,7 @@ func NewSpiral(n int) *Spiral {
     }
 
     // Starting point will be the top-left corner (0,0).
-    position := struct {
+    pos := struct {
         x, y int
     }{
         0,
@@ -46,59 +44,59 @@ func NewSpiral(n int) *Spiral {
     fill := 1
 
     // Start by moving toward the right then down, then left, then up, etc.
-    direction := "Right"
+    dir := "Right"
 
-    // Keep track of the number of steps we've taken in each direction.
-    distance := 0
+    // Keep track of the number of steps we've taken in each dir.
+    dist := 0
 
     // We've reached the end of the line, turn.
     turn := func(d string) {
-        steps[direction] -= 2
-        distance = 0
-        direction = d
+        steps[dir] -= 2
+        dist = 0
+        dir = d
     }
 
     // Keep walking down the line.
     walk := func() bool {
-        if distance == steps[direction] {
+        if dist == steps[dir] {
             return false
         }
-        distance++
+        dist++
         return true
     }
 
     for fill <= (n * n) { // While we haven't reached the final number...
 
-        grid[position.x][position.y] = fill
+        s[pos.x][pos.y] = fill
 
-        switch direction {
+        switch dir {
         case "Right":
             if walk() {
-                position.x++
+                pos.x++
                 break
             }
-            position.y++
+            pos.y++
             turn("Down")
         case "Down":
             if walk() {
-                position.y++
+                pos.y++
                 break
             }
-            position.x--
+            pos.x--
             turn("Left")
         case "Left":
             if walk() {
-                position.x--
+                pos.x--
                 break
             }
-            position.y--
+            pos.y--
             turn("Up")
         case "Up":
             if walk() {
-                position.y--
+                pos.y--
                 break
             }
-            position.x++
+            pos.x++
             turn("Right")
         }
 
@@ -106,25 +104,25 @@ func NewSpiral(n int) *Spiral {
 
     }
 
-    return &Spiral{grid}
+    return s
 
 }
 
-func (s *Spiral) String() string {
+func (s Spiral) String() string {
 
     var ns bytes.Buffer
 
-    w := len(strconv.Itoa(len(s.grid) * len(s.grid)))
+    w := len(strconv.Itoa(len(s) * len(s)))
 
-    for i := range s.grid {
-        for j := range s.grid[i] {
-            e := bytes.NewBufferString(strconv.Itoa(s.grid[j][i]))
+    for i := range s {
+        for j := range s[i] {
+            e := bytes.NewBufferString(strconv.Itoa(s[j][i]))
             for p := len(e.String()); p <= w; p++ {
                 e.WriteString(" ")
             }
             ns.WriteString(e.String())
         }
-        if i != len(s.grid) - 1 {
+        if i != len(s) - 1 {
             ns.WriteString("\n")
         }
     }
@@ -135,13 +133,13 @@ func (s *Spiral) String() string {
 
 func main() {
 
-    specimen, err := strconv.Atoi(os.Args[1])
+    num, err := strconv.Atoi(os.Args[1])
     if err != nil {
         fmt.Println("Incorrect usage")
         os.Exit(1)
     }
 
-    spiral := NewSpiral(specimen)
-    fmt.Println(spiral)
+    s := NewSpiral(num)
+    fmt.Println(s)
 
 }
