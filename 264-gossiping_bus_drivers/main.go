@@ -66,7 +66,7 @@ func ExchangeGossip(bd1, bd2 *BusDriver) {
 func AllGossipExchanged(bds ...*BusDriver) bool {
     for i := 0; i < len(bds) - 1; i++ {
         switch {
-        // If a BusDriver only has 1 gossip then hasn't receeived anything.
+        // If a BusDriver only has 1 gossip then hasn't received anything.
         case len(bds[i].Gossips) == 1:
             return false
         // If any two BusDriver's gossips are not of equal length then everyone has not shared their
@@ -103,7 +103,7 @@ func BusDriverGossipExchange(r ...[]int) int {
             }
         }
         if AllGossipExchanged(drvs...) {
-            return t
+            return t + 1
         }
     }
 
