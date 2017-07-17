@@ -23,14 +23,24 @@ type BusDriver struct {
 // NewBusDriver creates and initializes a new BusDriver. The BusDriver's route for the entire day is
 // filled out and starts with one (1) gossip to share.
 func NewBusDriver(r ...int) *BusDriver {
+
     var bd BusDriver
-    for t := 0; t < MaxTrips; t++ {
+
+    // Initial gossip.
+    bd.Gossips = append(bd.Gossips, &bd)
+
+    // Determine daily route.
+    var t int
+    for {
         for s := range r {
+            if t == MaxTrips {
+                return &bd
+            }
             bd.DailyRoute = append(bd.DailyRoute, r[s])
+            t++
         }
     }
-    bd.Gossips = append(bd.Gossips, &bd)
-    return &bd
+
 }
 
 // ExchangeGossip shares unknown gossip between two BusDrivers.
@@ -55,13 +65,13 @@ func ExchangeGossip(bd1, bd2 *BusDriver) {
 // AllGossipExchanged determines if all of the BusDrivers have shared their gossip with each other.
 func AllGossipExchanged(bds ...*BusDriver) bool {
     for i := 0; i < len(bds) - 1; i++ {
+        switch {
         // If a BusDriver only has 1 gossip then hasn't receeived anything.
-        if len(bds[i].Gossips) == 1 {
+        case len(bds[i].Gossips) == 1:
             return false
-        }
-        // If any two BusDriver's gossips are not of equal length then everyone has not shared
-        // their gossip with everyone.
-        if len(bds[i].Gossips) != len(bds[i + 1].Gossips) {
+        // If any two BusDriver's gossips are not of equal length then everyone has not shared their
+        // gossip with everyone.
+        case len(bds[i].Gossips) != len(bds[i + 1].Gossips):
             return false
         }
     }
@@ -69,10 +79,12 @@ func AllGossipExchanged(bds ...*BusDriver) bool {
 }
 
 // BusDriverGossipExchange calculates the number of stops each BusDriver must make before they all
-// have shared each other's gossip.
+// have shared each other's gossip. Returns -1 if all of the BusDrivers have not shared and heard
+// all of the gossip there is to share and hear by the end of their routes.
 func BusDriverGossipExchange(r ...[]int) int {
 
     var drvs []*BusDriver
+
     for br := range r {
         drvs = append(drvs, NewBusDriver(r[br]...))
     }
@@ -81,10 +93,10 @@ func BusDriverGossipExchange(r ...[]int) int {
         for src := range drvs {
             for dst := range drvs {
                 switch {
-                // They're the same BusDriver.
+                // Dont't exchange gossip with the same BusDriver.
                 case drvs[src] == drvs[dst]:
                     continue
-                // They're both at the same bus stop.
+                // Two different BusDrivers at the same bus stop.
                 case drvs[src].DailyRoute[t] == drvs[dst].DailyRoute[t]:
                     ExchangeGossip(drvs[src], drvs[dst])
                 }
