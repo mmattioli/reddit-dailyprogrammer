@@ -9,11 +9,15 @@ import (
     "reflect"
 )
 
-// A Tour is an activity that a tourist can partake in.
+// A Tour is an activity that someone can partake in.
 type Tour struct {
     Id string
     Name string
     Price float64
+}
+
+func (t Tour) String() string {
+    return t.Id
 }
 
 // A SalesPromotion is a rule which determines the eligibility for price adjustments and/or free
@@ -21,7 +25,7 @@ type Tour struct {
 type SalesPromotion func(t ...Tour) ([]Tour, float64)
 
 // A ShoppingCart contains the Tours intended for purchase and any SalesPromotions that are to be
-// applied to the tourist's order.
+// applied to an order.
 type ShoppingCart struct {
     Tours []Tour
     SalesPromotions []SalesPromotion
@@ -58,30 +62,24 @@ func (s *ShoppingCart) Empty() {
 // Review displays the Tours that were added for purchase and any/all adjustments that result from
 // the SalesPromotions that are in effect.
 func (s *ShoppingCart) Review() {
-    fmt.Printf("Items: ")
-    var st float64
+    var st, ap float64
     for i := range s.Tours {
         st += s.Tours[i].Price
-        fmt.Printf("%s ", s.Tours[i].Id)
     }
-    fmt.Printf("\nSubtotal: $%.2f\n\n", st)
-
-    fmt.Printf("Sales promotion adjustments\n")
+    var at []Tour
     for i := range s.SalesPromotions {
-        tr, adj := s.SalesPromotions[i](s.Tours...)
-        if tr != nil {
-            fmt.Printf("\tTours added: ")
-            for j := range tr {
-                fmt.Printf("%s ", tr[j].Id)
-            }
-        }
-        if adj != 0.00 {
-            st += adj
-            fmt.Printf("\tSubtotal adjustments: $%.2f", adj)
-        }
+        t, a := s.SalesPromotions[i](s.Tours...)
+        at = append(at, t...)
+        ap += a
     }
-
-    fmt.Printf("\n\nGrand total: $%.2f\n", st)
+    const summary = `
+Items: %s
+Subtotal: $%.2f
+Sales promotion adjustments
+    Tours added: %s Price adjustments: $%.2f
+Grand total: $%.2f
+`
+    fmt.Printf(summary, s.Tours, st, at, ap, (st + ap))
 }
 
 func main() {
@@ -98,7 +96,7 @@ func main() {
                 cnt++
             }
         }
-        return nil, float64(float64(cnt / 3) * -OH.Price)
+        return nil, float64(cnt / 3) * -OH.Price
     }
 
     // Purchasing one (1) Opera House tour yields a free Sky Tower tour.
@@ -112,13 +110,24 @@ func main() {
                 cntSK++
             }
         }
-        var tmp []Tour
-        if cntOH > 0 {
+        switch {
+        // There are no Opera House tours being purchased so this promotion does not apply.
+        case cntOH == 0:
+            return nil, 0.00
+        // Yield a credit for the same number of Sky Tower tours being purchased as the number of
+        // Opera House tours being purchased.
+        case cntOH <= cntSK:
+            return nil, float64(cntOH) * -SK.Price
+        // Yield a credit for the same number of Sky Tower tours being purchased as the number of
+        // Opera House tours being purchased along with extra Sky Tower tours for every Opera House
+        // tour being purchased in excess of the number of Sky Tower tours being purchased.
+        default:
+            var tmp []Tour
             for i := 0; i < (cntOH - cntSK); i++ {
                 tmp = append(tmp, SK)
             }
+            return tmp, float64(cntSK) * -SK.Price
         }
-        return tmp, float64(cntSK) * -SK.Price
     }
 
     // Purchasing more than four (4) Bridge Climb tours yields a discount of $20.00 on all
@@ -131,27 +140,32 @@ func main() {
             }
         }
         if cnt > 4 {
-            return nil, float64(-20 * cnt)
+            return nil, float64(-20.00 * cnt)
         }
         return nil, 0.00
     }
 
-    var sc ShoppingCart
+    tests := [][]Tour{
+        []Tour{OH, OH, OH, BC},
+        []Tour{OH, SK},
+        []Tour{BC, BC, BC, BC, BC, OH},
+        []Tour{OH, OH, OH, BC, SK},
+        []Tour{OH, BC, BC, SK, SK},
+        []Tour{BC, BC, BC, BC, BC, BC, OH, OH},
+        []Tour{SK, SK, BC},
+    }
 
-    sc.AddTour(OH, OH, OH, BC)
-    sc.AddSalesPromotion(ThreeForTwoOperaHouse, FreeSkyTowerWithOperaHouse, SydneyBridgeClimbBulkDiscount)
-    sc.Review()
+    currentPromotions := []SalesPromotion{
+        ThreeForTwoOperaHouse,
+        FreeSkyTowerWithOperaHouse,
+        SydneyBridgeClimbBulkDiscount,
+    }
 
-    sc.Empty()
-
-    sc.AddTour(OH, SK)
-    sc.AddSalesPromotion(ThreeForTwoOperaHouse, FreeSkyTowerWithOperaHouse, SydneyBridgeClimbBulkDiscount)
-    sc.Review()
-
-    sc.Empty()
-
-    sc.AddTour(BC, BC, BC, BC, BC, OH)
-    sc.AddSalesPromotion(ThreeForTwoOperaHouse, FreeSkyTowerWithOperaHouse, SydneyBridgeClimbBulkDiscount)
-    sc.Review()
+    for t := range tests {
+        var sc ShoppingCart
+        sc.AddTour(tests[t]...)
+        sc.AddSalesPromotion(currentPromotions...)
+        sc.Review()
+    }
 
 }
