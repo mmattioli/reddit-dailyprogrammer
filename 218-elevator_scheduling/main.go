@@ -21,21 +21,27 @@ const (
     Down Direction = "Down"
 )
 
+// A Request is a Rider's desire to go from one Floor (Origin) to another (Destination) at a
+// particular point in time.
 type Request struct {
     Time int
     Origin int
     Destination int
 }
 
+// A Rider uses an elevator Car to traverse between Floors. Riders can make several Requests to be
+// transferred from one Floor to another.
 type Rider struct {
     Id string
     Requests []Request
 }
 
+// When a Rider Arrives on a Floor, the first (active) Request is removed.
 func (r *Rider) Arrive() {
     r.Requests = append(r.Requests[:0], r.Requests[1:]...)
 }
 
+// A Floor is a holding area for active Riders.
 type Floor struct {
     Id int
     Ingress chan Rider
@@ -44,6 +50,8 @@ type Floor struct {
     Time int
 }
 
+// Accept takes in Riders from an elevator Car. Upon Arrival, the Rider(s) will be moved to Standby
+// if they have future Requests to be made.
 func (f *Floor) Accept() {
     for len(f.Ingress) > 0 {
         r := <- f.Ingress
@@ -53,6 +61,7 @@ func (f *Floor) Accept() {
     }
 }
 
+// Eject queues Riders to be picked up by an elevator Car.
 func (f *Floor) Eject() {
     temp := []Rider{}
     for i := range f.Standby {
@@ -66,6 +75,7 @@ func (f *Floor) Eject() {
     f.Standby = temp
 }
 
+// An elevator Car moves between Floors to transport Riders.
 type Car struct {
     Id string
     Capacity int
@@ -74,6 +84,7 @@ type Car struct {
     Passengers []Rider
 }
 
+// Pickup takes in as many Riders from a particular Floor as its Capacity will allow.
 func (c *Car) Pickup(in <-chan Rider) {
     for len(in) > 0 && len(c.Passengers) < c.Capacity {
         r := <- in
@@ -81,6 +92,7 @@ func (c *Car) Pickup(in <-chan Rider) {
     }
 }
 
+// Dropoff lets Riders out of the Car and onto the Floor.
 func (c *Car) Dropoff(out chan<- Rider) {
     temp := []Rider{}
     for i := range c.Passengers {
@@ -94,10 +106,13 @@ func (c *Car) Dropoff(out chan<- Rider) {
     c.Passengers = temp
 }
 
+// DoorsOpen indicates whether or not the elevator Car is at the proper position to open its doors
+// when it arrives at a particular Floor.
 func (c *Car) DoorsOpen(f int) bool {
     return math.Abs(c.Position - float64(f)) < 0.001
 }
 
+// Move adjusts the elevator Car's Position depending on its Speed and the indicated Direction.
 func (c *Car) Move(d Direction) {
     switch d {
     case Up:
@@ -109,58 +124,62 @@ func (c *Car) Move(d Direction) {
     }
 }
 
+// RidersGoing indicates whether or not there are Riders in an elevator Car who desire to be
+// transported to a Floor that is in the indicated Direction.
 func (c *Car) RidersGoing(d Direction) bool {
-    var cnt int
     for i := range c.Passengers {
         switch d {
         case Up:
             if float64(c.Passengers[i].Requests[0].Destination) > c.Position {
-                cnt++
+                return true
             }
         case Down:
             if float64(c.Passengers[i].Requests[0].Destination) < c.Position {
-                cnt++
+                return true
             }
         }
     }
-    return cnt > 0
+    return false
 }
 
-func ElevatorScheduling(c []Car, f []Floor) {
+// ElevatorScheduling returns the number of "seconds" it would take to satisfy all Riders' Requests
+// given pre-populated Floors and specific elevator Cars.
+func ElevatorScheduling(c []Car, f []Floor) int {
 
+    // Is there anyone still in the building?
     ridersAlive := func() bool {
-        var cnt int
         for i := range f {
-            cnt += (len(f[i].Egress) + len(f[i].Ingress) + len(f[i].Standby))
+            if (len(f[i].Egress) + len(f[i].Ingress) + len(f[i].Standby)) > 0 {
+                return true
+            }
         }
         for i := range c {
-            cnt += len(c[i].Passengers)
+            if len(c[i].Passengers) > 0 {
+                return true
+            }
         }
-        return cnt > 0
+        return false
     }
 
+    // Is there anyone waiting to be picked up?
     ridersNotServiced := func(d Direction, fn int) bool {
-        var cnt int
-        switch d {
-        case Up:
-            for i := range f {
-                if f[i].Id > fn {
-                    cnt += len(f[i].Egress)
+        for i := range f {
+            switch d {
+            case Up:
+                if f[i].Id > fn &&  len(f[i].Egress) > 0 {
+                    return true
                 }
-            }
-        case Down:
-            for i := range f {
-                if f[i].Id < fn {
-                    cnt += len(f[i].Egress)
+            case Down:
+                if f[i].Id < fn && len(f[i].Egress) > 0 {
+                    return true
                 }
             }
         }
-        return cnt > 0
+        return false
     }
 
     var t int
-    for ridersAlive() {
-        t++
+    for t = 0; ridersAlive(); t++ {
         for i := range f {
                 f[i].Time = t
                 f[i].Accept()
@@ -182,17 +201,19 @@ func ElevatorScheduling(c []Car, f []Floor) {
                 c[i].Move(Up)
             case ridersNotServiced(Down, int(math.Trunc(c[i].Position))):
                 c[i].Move(Down)
-            case len(c[i].Passengers) == 0 && c[i].Position > 1.0:
+            case len(c[i].Passengers) == 0:
                 c[i].Move(Down)
             }
         }
     }
-    fmt.Printf("Took %ds to service all passengers\n", t)
+
+    return t
+
 }
 
 func main() {
 
-    parseChallengeInput := func(fn string) ([]Car, []Floor) {
+    parseInput := func(fn string) ([]Car, []Floor) {
         fh, err := os.Open(fn)
         if err != nil {
             log.Fatal(err)
@@ -250,8 +271,8 @@ func main() {
         return c, f
     }
 
-    c, f := parseChallengeInput("challenge_input.txt")
+    c, f := parseInput("challenge_input.txt")
 
-    ElevatorScheduling(c, f)
+    fmt.Printf("Took %ds to service all passengers\n", ElevatorScheduling(c, f))
 
 }
