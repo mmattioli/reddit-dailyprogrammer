@@ -147,7 +147,7 @@ func ElevatorScheduling(c []Car, f []Floor) int {
     // Is there anyone still in the building?
     ridersAlive := func() bool {
         for i := range f {
-            if (len(f[i].Egress) + len(f[i].Standby)) > 0 {
+            if len(f[i].Egress) + len(f[i].Standby) > 0 {
                 return true
             }
         }
