@@ -47,30 +47,38 @@ type Floor struct {
     Ingress chan Rider
     Egress chan Rider
     Standby []Rider
-    Time int
+    Time chan int
 }
 
-// Interchange accepts Riders from an elevator Car and queues Riders to be picked up by an elevator
-// Car. Upon Arrival, Rider(s) will be moved to Standby if they have future Requests to be made.
+// Interchange continuously Accepts and Ejects Riders.
 func (f *Floor) Interchange() {
-    for {
-        select {
-        case r := <-f.Ingress: // Accept any Riders whose Destination is this Floor.
-            if r.Arrive(); len(r.Requests) > 0 {
-                f.Standby = append(f.Standby, r)
-            }
-        default: // Add Riders to the queue as they make Requests.
-            temp := []Rider{}
-            for i := range f.Standby {
-                switch {
-                case f.Standby[i].Requests[0].Time <= f.Time:
-                    f.Egress <- f.Standby[i]
-                default:
-                    temp = append(temp, f.Standby[i])
-                }
-            }
-            f.Standby = temp
+    go f.Accept()
+    go f.Eject()
+}
+
+// Accept takes in Riders from an elevator Car. Upon Arrival, Rider(s) will be moved to Standby if
+// they have future Requests to be made.
+func (f *Floor) Accept() {
+    for r := range f.Ingress {
+        if r.Arrive(); len(r.Requests) > 0 {
+            f.Standby = append(f.Standby, r)
         }
+    }
+}
+
+// Eject queues Riders to be picked up by an elevator Car.
+func (f *Floor) Eject() {
+    for t := range f.Time {
+        temp := []Rider{}
+        for i := range f.Standby {
+            switch {
+            case f.Standby[i].Requests[0].Time <= t:
+                f.Egress <- f.Standby[i]
+            default:
+                temp = append(temp, f.Standby[i])
+            }
+        }
+        f.Standby = temp
     }
 }
 
@@ -85,7 +93,7 @@ type Car struct {
 
 // Pickup takes in as many Riders from a particular Floor as its Capacity will allow.
 func (c *Car) Pickup(in <-chan Rider) {
-    for len(in) > 0 && len(c.Passengers) <= c.Capacity {
+    for len(in) > 0 && len(c.Passengers) < c.Capacity {
         c.Passengers = append(c.Passengers, <-in)
     }
 }
@@ -178,15 +186,15 @@ func ElevatorScheduling(c []Car, f []Floor) int {
 
     // Continuously process Riders getting off Car(s) and making Requests.
     for i := range f {
-        go f[i].Interchange()
+        f[i].Interchange()
     }
 
     var t int
     for t = 0; ridersAlive(); t++ {
 
-        // Update the time across all Floors.
+        // Update the Time across all Floors.
         for i := range f {
-            f[i].Time = t
+            f[i].Time <- t
         }
 
         for i := range c {
@@ -202,13 +210,13 @@ func ElevatorScheduling(c []Car, f []Floor) int {
             // Move the Car in a particular Direction depending on the situation. This is defines
             // the core logic behind how Cars service Riders.
             switch {
-            case ridersNotServiced(Up, int(math.Trunc(c[i].Position))):
-                c[i].Move(Up)
-            case ridersNotServiced(Down, int(math.Trunc(c[i].Position))):
-                c[i].Move(Down)
             case c[i].RidersGoing(Up):
                 c[i].Move(Up)
             case c[i].RidersGoing(Down):
+                c[i].Move(Down)
+            case ridersNotServiced(Up, int(math.Trunc(c[i].Position))):
+                c[i].Move(Up)
+            case ridersNotServiced(Down, int(math.Trunc(c[i].Position))):
                 c[i].Move(Down)
             case len(c[i].Passengers) == 0:
                 c[i].Move(Down)
@@ -276,7 +284,7 @@ func main() {
             }
             // The Egress channel is created with a buffer large enough to hold all of the Riders
             // which will ever exist because it will be used as a queue when Riders make Requests.
-            f = append(f, Floor{i, make(chan Rider), make(chan Rider, len(r)), s, 0})
+            f = append(f, Floor{i, make(chan Rider), make(chan Rider, len(r)), s, make(chan int)})
         }
         if err := fs.Err(); err != nil {
             log.Fatal(err)
