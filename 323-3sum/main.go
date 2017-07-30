@@ -69,13 +69,17 @@ func ThreeSum(nums ...int) []Triplet {
     }
 
     wg.Wait()
-    close(c)
     return trpl
 
 }
 
 func main() {
-    fmt.Println(ThreeSum(4, 5, -1, -2, -7, 2, -5, -3, -7, -3, 1))
-    fmt.Println(ThreeSum(-1, -6, -3, -7, 5, -8, 2, -8, 1))
-    fmt.Println(ThreeSum(-5, -1, -4, 2, 9, -9, -6, -1, -7))
+    tests := [][]int{
+        []int{4, 5, -1, -2, -7, 2, -5, -3, -7, -3, 1},
+        []int{-1, -6, -3, -7, 5, -8, 2, -8, 1},
+        []int{-5, -1, -4, 2, 9, -9, -6, -1, -7},
+    }
+    for t := range tests {
+        fmt.Println(ThreeSum(tests[t]...))
+    }
 }
