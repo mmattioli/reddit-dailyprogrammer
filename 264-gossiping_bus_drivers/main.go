@@ -23,24 +23,16 @@ type BusDriver struct {
 // NewBusDriver creates and initializes a new BusDriver. The BusDriver's route for the entire day is
 // filled out and starts with one (1) gossip to share.
 func NewBusDriver(r ...int) *BusDriver {
-
     var bd BusDriver
-
     // Initial gossip.
     bd.Gossips = append(bd.Gossips, &bd)
-
     // Determine daily route.
-    var t int
-    for {
+    for t := 0; t < MaxTrips; t++ {
         for s := range r {
-            if t == MaxTrips {
-                return &bd
-            }
             bd.DailyRoute = append(bd.DailyRoute, r[s])
-            t++
         }
     }
-
+    return &bd
 }
 
 // ExchangeGossip shares unknown gossip between two BusDrivers.
@@ -82,13 +74,10 @@ func AllGossipExchanged(bds ...*BusDriver) bool {
 // have shared each other's gossip. Returns -1 if all of the BusDrivers have not shared and heard
 // all of the gossip there is to share and hear by the end of their routes.
 func BusDriverGossipExchange(r ...[]int) int {
-
     var drvs []*BusDriver
-
     for br := range r {
         drvs = append(drvs, NewBusDriver(r[br]...))
     }
-
     for t := 0; t < MaxTrips; t++ {
         for src := range drvs {
             for dst := range drvs {
@@ -106,9 +95,7 @@ func BusDriverGossipExchange(r ...[]int) int {
             return t + 1
         }
     }
-
     return -1
-
 }
 
 func main() {
